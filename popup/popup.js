@@ -1,30 +1,66 @@
-document.getElementById("toggleBtn").addEventListener("click", async () => {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  
-  if (tab.url?.startsWith("chrome://") || tab.url?.startsWith("about:")) {
-    return;
-  }
+updateButtonState();
 
-  const { enabled } = await chrome.storage.sync.get(["enabled"]);
-  const newState = !enabled;
-
-  await chrome.storage.sync.set({ enabled: newState });
-  await chrome.scripting.executeScript({
-    target: { tabId: tab.id },
-    files: ['content.js']
-  });
-});
-
-chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-  const tab = tabs[0];
+document.getElementById("toggleBtn").addEventListener("click", toggleMode);
+async function toggleMode() {
   const btn = document.getElementById("toggleBtn");
-  
-  if (tab.url?.startsWith("chrome://")) {
-    btn.textContent = "Not available on Chrome pages";
+  btn.disabled = true;
+
+  try {
+    const [tab] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
+    if (tab.url?.startsWith("chrome://") || tab.url?.startsWith("about:")) return;
+
+    const { enabled } = await chrome.storage.sync.get(["enabled"]);
+    const newState = !enabled;
+
+    await chrome.storage.sync.set({ enabled: newState });
+
+    await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      files: ["content.js"],
+    });
+
+    chrome.tabs.sendMessage(tab.id, { action: "toggle", enabled: newState });
+  } catch (error) {
+    console.error("Toggle failed:", error);
+  } finally {
+    updateButtonState();
+  }
+}
+
+async function updateButtonState(state) {
+  const btn = document.getElementById("toggleBtn");
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+  if (tab.url?.startsWith("chrome://") || tab.url?.startsWith("about:")) {
+    btn.textContent = "Not available on this page";
     btn.disabled = true;
     return;
   }
 
-  const { enabled } = await chrome.storage.sync.get(["enabled"]);
-  btn.textContent = enabled ? "Disable Reading Mode" : "Enable Reading Mode";
-});
+  try {
+    const response = await chrome.tabs.sendMessage(tab.id, {
+      action: "getState",
+    });
+    btn.textContent = response?.enabled ? "Disable" : "Enable";
+  } catch (error) {
+    const { enabled } = await chrome.storage.sync.get(["enabled"]);
+    btn.textContent = enabled ? "Disable" : "Enable";
+  }
+  btn.disabled = false;
+}
+
+async function updateAllTabs(enabled) {
+  const tabs = await chrome.tabs.query({});
+  for (const tab of tabs) {
+    if (tab.url?.startsWith("chrome://") || tab.url?.startsWith("about:")) {
+      chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        files: ["content.js"],
+      });
+    }
+  }
+  chrome.runtime.sendMessage({ action: "toggle", enabled });
+}
