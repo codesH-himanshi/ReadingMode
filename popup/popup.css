@@ -1,0 +1,46 @@
+body {
+    background-color: #f5f5f5;
+    font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    margin: 0;
+    padding: 0;
+    min-width: 200px;
+}
+
+h1 {
+    color: #333;
+    font-size: 18px;
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+.toggle-button {
+    background-color: #4a6fa5;
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.toggle-button:hover {
+    background-color: #3a5a8f;
+    transform: translateY(-2px);
+}
+
+.toggle-button:active {
+    transform: translateY(0);
+}
+
+.toggle-button .icon {
+    font-size: 16px;
+}
+
